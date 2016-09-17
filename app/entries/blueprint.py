@@ -1,15 +1,31 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from app import db
-from helpers import object_list, entry_list
+from helpers import object_list
 from models import Entry, Tag
 from entries.forms import EntryForm
 
 entries = Blueprint('entries', __name__, template_folder='templates')
 
+def entry_list(template, query, **context):
+    valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
+    query = query.filter(Entry.status.in_(valid_statuses))
+    if request.args.get('q'):
+        search = request.args['q']
+        query = query.filter(
+                (Entry.body.contains(search)) |
+                (Entry.title.contains(search)))
+    return object_list(template, query, **context)
+
+def get_entry_or_404(slug):
+    valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
+    filter_ =  (Entry.slug == slug) & (Entry.status.in_(valid_statuses))
+    return Entry.query.filter(filter_).first_or_404()
+
 @entries.route('/')
 def index():
     entries = Entry.query.order_by(Entry.created_timestamp.desc())
+    print entries.all()
     return entry_list('entries/index.html', entries)
 
 @entries.route('/create/', methods=['GET', 'POST'])
@@ -38,12 +54,12 @@ def tag_detail(slug):
 
 @entries.route('/<slug>/')
 def detail(slug):
-    entry = Entry.query.filter(Entry.slug == slug).first_or_404()
+    entry = get_entry_or_404(slug)
     return render_template('entries/detail.html', entry=entry)
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
 def edit(slug):
-    entry = Entry.query.filter(Entry.slug == slug).first_or_404()
+    entry = get_entry_or_404(slug)
     if request.method == 'POST':
         form = EntryForm(request.form, obj=entry)
         if form.validate():
@@ -54,3 +70,14 @@ def edit(slug):
     else:
         form = EntryForm(obj=entry)
     return render_template('entries/edit.html', entry=entry, form=form)
+
+@entries.route('/<slug>/delete/', methods=['GET', 'POST'])
+def delete(slug):
+    entry = get_entry_or_404(slug)
+    if request.method == 'POST':
+        entry.status = Entry.STATUS_DELETED
+        db.session.add(entry)
+        db.session.commit()
+        return redirect(url_for('entries.index'))
+    return render_template('entries/delete.html', entry=entry)
+

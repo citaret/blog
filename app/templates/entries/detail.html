@@ -11,7 +11,8 @@
       <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name }}</a></li>
     {% endfor %}
   </ul>
-  <a href="{{ url_for('entries.edit', slug=entry.slug) }}">Edit</a>
+  [<a href="{{ url_for('entries.edit', slug=entry.slug) }}">Edit</a>]
+  [<a href="{{ url_for('entries.delete', slug=entry.slug) }}">Delete</a>]
 
   <p>Published {{ entry.created_timestamp.strftime('%m/%d/%Y') }}</p>
 {% endblock %}
