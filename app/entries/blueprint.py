@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, redirect, render_template, request, url_for
 
+from app import db
 from helpers import object_list, entry_list
 from models import Entry, Tag
+from entries.forms import EntryForm
 
 entries = Blueprint('entries', __name__, template_folder='templates')
 
@@ -9,6 +11,19 @@ entries = Blueprint('entries', __name__, template_folder='templates')
 def index():
     entries = Entry.query.order_by(Entry.created_timestamp.desc())
     return entry_list('entries/index.html', entries)
+
+@entries.route('/create/', methods=['GET', 'POST'])
+def create():
+    if request.method == 'POST':
+        form = EntryForm(request.form)
+        if form.validate():
+            entry = form.save_entry(Entry())
+            db.session.add(entry)
+            db.session.commit()
+            return redirect(url_for('entries.detail', slug=entry.slug))
+    else:
+        form = EntryForm()
+    return render_template('entries/create.html', form=form)
 
 @entries.route('/tags/')
 def tag_index():
