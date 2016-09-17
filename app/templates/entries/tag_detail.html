@@ -1,9 +1,4 @@
-{% extends "base.html" %}
+{% extends "entries/base_entries.html" %}
+{% block title %}Tags{% endblock %}
+{% block content_title %}Tags{% endblock %}
 
-{% block title %}{{ tag.name }} entries{% endblock %}
-
-{% block content_title %}{{ tag.name }} entries{% endblock %}
-
-{% block content %}
-  {% include "includes/list.html" %}
-{% endblock %}
