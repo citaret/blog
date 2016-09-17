@@ -1,4 +1,5 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask.ext.login import login_required
 
 from app import db
 from helpers import object_list
@@ -29,11 +30,12 @@ def index():
     return entry_list('entries/index.html', entries)
 
 @entries.route('/create/', methods=['GET', 'POST'])
+@login_required
 def create():
     if request.method == 'POST':
         form = EntryForm(request.form)
         if form.validate():
-            entry = form.save_entry(Entry())
+            entry = form.save_entry(Entry(author=g.user))
             db.session.add(entry)
             db.session.commit()
             flash('Entry "%s" created successfully.' % entry.title, 'success')
@@ -59,6 +61,7 @@ def detail(slug):
     return render_template('entries/detail.html', entry=entry)
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
+@login_required
 def edit(slug):
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
@@ -74,6 +77,7 @@ def edit(slug):
     return render_template('entries/edit.html', entry=entry, form=form)
 
 @entries.route('/<slug>/delete/', methods=['GET', 'POST'])
+@login_required
 def delete(slug):
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
